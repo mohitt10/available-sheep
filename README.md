@@ -9,6 +9,8 @@ This repository contains two integrated C++ components:
 - `expression_dag` — a DAG-backed expression registry that assigns stable IDs to expressions, tracks operand dependencies, reuses equivalent pure expressions, and exposes immutable snapshots.
 - `avl_tree` — an AVL tree implementation used to manage keyed expression metadata with balancing and validation checks.
 
+- `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
+
 The project is structured as a single CMake build with library targets and automated tests.
 
 ## Repository layout
@@ -18,6 +20,9 @@ The project is structured as a single CMake build with library targets and autom
 - `include/Avltree.hpp` — AVL tree interface.
 - `src/Avltree.cpp` — AVL balancing, insertion, deletion, and validation logic.
 - `tests/expression_dag_test.cpp` — DAG behavior and correctness checks.
+- `include/identifier_trie.hpp` / `src/identifier_trie.cpp` — identifier trie API and implementation.
+- `include/shared_types.hpp` — shared `SymbolId` definition (the single alias for symbol IDs).
+- `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 
@@ -58,6 +63,14 @@ The AVL tree API exposes:
 - `find(key)`
 - `keysInOrder()`
 - `isValid()`
+
+The `IdentifierTrie` API exposes:
+
+- `insert(spelling, symbolId)`
+- `contains(spelling)` / `findExact(spelling)`
+- `findByPrefix(prefix, limit)`
+- `suggest(spelling, limit, maxEditDistance = 2)`
+- `snapshot()` (copied values for the GUI)
 
 ## Notes
 
