@@ -22,4 +22,3 @@ if(BUILD_TESTING)
     target_link_libraries(identifier_trie_test PRIVATE identifier_trie)
     add_test(NAME identifier_trie_test COMMAND identifier_trie_test)
 endif()
- 
