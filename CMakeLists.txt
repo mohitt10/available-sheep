@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.16)
+project(available_sheep LANGUAGES CXX)
+
+add_library(expression_dag src/expression_dag.cpp)
+target_include_directories(expression_dag PUBLIC include)
+target_compile_features(expression_dag PUBLIC cxx_std_17)
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(expression_dag_test tests/expression_dag_test.cpp)
+    target_link_libraries(expression_dag_test PRIVATE expression_dag)
+    add_test(NAME expression_dag_test COMMAND expression_dag_test)
+endif()
