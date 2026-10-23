@@ -1,15 +1,20 @@
 # COMPILER OPTIMIZATION ENGINE
 
-A small C++ project for expression-graph and AVL-tree utilities used in compiler-like data structures.
+A local C++17/20 and Qt 6 application for compiling a restricted C-like
+language, optimizing its intermediate representation, and visualizing the
+engine's data structures. The [HLD](docs/Screenshot%20From%202026-10-21%2015-20-08.png)
+defines the target architecture; the [final implementation plan](docs/final-implementation-plan.md)
+tracks the complete application scope.
 
 ## Overview
 
-This repository contains two integrated C++ components:
+The target application has four layers: Qt presentation, compiler frontend,
+optimization engine, and data-structure engine. The repository currently
+contains these Layer 4 C++ components:
 
 - `expression_dag` — a DAG-backed expression registry that assigns stable IDs to expressions, tracks operand dependencies, reuses equivalent pure expressions, and exposes immutable snapshots.
-- `avl_tree` — an AVL tree implementation used to manage keyed expression metadata with balancing and validation checks.
-
-- `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
+- `avl_tree` — an AVL tree implementation for keyed metadata, with balancing and validation checks.
+- `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search, and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
 
 The project is structured as a single CMake build with library targets and automated tests.
 
@@ -26,14 +31,20 @@ The project is structured as a single CMake build with library targets and autom
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 
-## Integration status
+## Implementation status
 
-The project is fully wired together through CMake:
+CMake currently defines three library targets and three corresponding CTest
+executables. The components have standalone implementations, but integration
+is not yet complete: the AVL implementation is string-keyed rather than the
+planned `ExprId` metadata index. Build and test status must be verified with a
+native compiler; the last attempted configuration selected an ARM bare-metal
+compiler and failed before project sources were compiled.
 
-- `expression_dag` builds as a library target.
-- `avl_tree` builds as a separate library target.
-- Both test executables are linked to their respective libraries and added to CTest.
-- The repository currently builds cleanly and passes all tests in the default configuration.
+See the [final implementation plan](docs/final-implementation-plan.md) for
+project scope, component contracts, completion criteria, and the recommended
+work order. The [DAG](docs/implementation-plan-dag.md),
+[AVL](docs/implementation-plan-avl.md), and
+[trie](docs/implementation-plan-trie.md) documents contain component details.
 
 ## Build and test
 
