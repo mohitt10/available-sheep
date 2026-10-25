@@ -4,12 +4,13 @@ A small C++ project for expression-graph and AVL-tree utilities used in compiler
 
 ## Overview
 
-This repository contains two integrated C++ components:
+This repository contains several standalone C++ components:
 
 - `expression_dag` — a DAG-backed expression registry that assigns stable IDs to expressions, tracks operand dependencies, reuses equivalent pure expressions, and exposes immutable snapshots.
 - `avl_tree` — an AVL tree implementation used to manage keyed expression metadata with balancing and validation checks.
 
 - `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
+- `ir` — an intermediate-representation model with instruction validation, formatting, arithmetic evaluation, metrics, and an interpreter for programs with input/output.
 
 The project is structured as a single CMake build with library targets and automated tests.
 
@@ -23,6 +24,10 @@ The project is structured as a single CMake build with library targets and autom
 - `include/identifier_trie.hpp` / `src/identifier_trie.cpp` — identifier trie API and implementation.
 - `include/shared_types.hpp` — shared `SymbolId` definition (the single alias for symbol IDs).
 - `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
+- `include/Ir.hpp` / `src/Ir.cpp` — IR instructions, validation, evaluation, formatting, and metrics.
+- `include/Interpreter.hpp` / `src/Interpreter.cpp` — IR program interpreter.
+- `include/Diagnostics.hpp`, `include/Optimizertypes.hpp`, and `include/Resultmodel.hpp` — diagnostics and optimization-result data types.
+- `tests/Irtests.cpp` — IR and interpreter behavior checks.
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 
@@ -30,10 +35,9 @@ The project is structured as a single CMake build with library targets and autom
 
 The project is fully wired together through CMake:
 
-- `expression_dag` builds as a library target.
-- `avl_tree` builds as a separate library target.
-- Both test executables are linked to their respective libraries and added to CTest.
-- The repository currently builds cleanly and passes all tests in the default configuration.
+- `expression_dag`, `avl_tree`, `identifier_trie`, and `ir` build as separate library targets.
+- Each component has a corresponding test executable registered with CTest.
+- The optimizer header currently provides pass configuration and result data types; optimization passes are not implemented yet.
 
 ## Build and test
 
@@ -71,6 +75,8 @@ The `IdentifierTrie` API exposes:
 - `findByPrefix(prefix, limit)`
 - `suggest(spelling, limit, maxEditDistance = 2)`
 - `snapshot()` (copied values for the GUI)
+
+The `ir` library exposes `Program` and `Instruction` types, validation and formatting helpers, arithmetic evaluation, metrics, and `run()` for interpreting a program with supplied input values.
 
 ## Notes
 
