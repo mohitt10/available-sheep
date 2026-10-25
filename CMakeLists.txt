@@ -17,6 +17,16 @@ add_library(ir src/Ir.cpp src/Interpreter.cpp)
 target_include_directories(ir PUBLIC include)
 target_compile_features(ir PUBLIC cxx_std_17)
 
+add_library(frontend
+    src/Lexer.cpp
+    src/Parser.cpp
+    src/Semantic.cpp
+    src/Irgenerator.cpp
+    src/Frontend.cpp)
+target_include_directories(frontend PUBLIC include)
+target_compile_features(frontend PUBLIC cxx_std_17)
+target_link_libraries(frontend PUBLIC ir)
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(expression_dag_test tests/expression_dag_test.cpp)
@@ -34,4 +44,8 @@ if(BUILD_TESTING)
     add_executable(ir_test tests/Irtests.cpp)
     target_link_libraries(ir_test PRIVATE ir avl_tree)
     add_test(NAME ir_test COMMAND ir_test)
+
+    add_executable(frontend_test tests/Frontendtest.cpp)
+    target_link_libraries(frontend_test PRIVATE frontend)
+    add_test(NAME frontend_test COMMAND frontend_test)
 endif()

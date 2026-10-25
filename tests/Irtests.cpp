@@ -110,6 +110,14 @@ static void testRun() {
     RunResult trap = run(z, {});
     assert(trap.status == RunStatus::DivisionByZero);
     assert(trap.output.size() == 1 && trap.output[0] == 9);
+
+    Program invalid;
+    invalid.tempCount = 1;
+    invalid.code.push_back(makeInstruction(
+        Opcode::Print, Operand::none(), Operand::temp(1)));
+    RunResult rejected = run(invalid, {});
+    assert(rejected.status == RunStatus::InvalidProgram);
+    assert(rejected.output.empty());
 }
 
 static void testMetrics() {

@@ -3,6 +3,11 @@
 
 RunResult run(const Program& program, const std::vector<std::int32_t>& input) {
     RunResult result;
+    if (!validate(program).empty()) {
+        result.status = RunStatus::InvalidProgram;
+        return result;
+    }
+
     std::vector<std::int32_t> temps(program.tempCount, 0);
     std::map<SymbolId, std::int32_t> symbols;
     std::size_t nextInput = 0;

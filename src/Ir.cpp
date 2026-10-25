@@ -54,6 +54,29 @@ bool isCommutative(Opcode op) {
     return op == Opcode::Add || op == Opcode::Mul || op == Opcode::Eq || op == Opcode::Ne;
 }
 
+static bool isValidOpcode(Opcode op) {
+    switch (op) {
+        case Opcode::Copy:
+        case Opcode::Neg:
+        case Opcode::Not:
+        case Opcode::Add:
+        case Opcode::Sub:
+        case Opcode::Mul:
+        case Opcode::Div:
+        case Opcode::Mod:
+        case Opcode::Lt:
+        case Opcode::Le:
+        case Opcode::Gt:
+        case Opcode::Ge:
+        case Opcode::Eq:
+        case Opcode::Ne:
+        case Opcode::Input:
+        case Opcode::Print:
+            return true;
+    }
+    return false;
+}
+
 const char* opcodeText(Opcode op) {
     switch (op) {
         case Opcode::Neg: return "-";
@@ -177,6 +200,11 @@ std::vector<std::string> validate(const Program& p) {
             errors.push_back("instruction " + std::to_string(i) + ": " + msg);
         };
 
+        if (!isValidOpcode(ins.op)) {
+            fail("invalid opcode");
+            continue;
+        }
+
         if (ins.effect != effectOf(ins.op)) fail("effect does not match opcode");
 
         int n = operandCount(ins.op);
@@ -185,6 +213,11 @@ std::vector<std::string> validate(const Program& p) {
             const Operand& o = *operands[k];
             if (k >= n) {
                 if (o.kind != OperandKind::None) fail("unexpected operand");
+                continue;
+            }
+            if (o.kind != OperandKind::None && o.kind != OperandKind::Const &&
+                o.kind != OperandKind::Temp && o.kind != OperandKind::Symbol) {
+                fail("invalid operand kind");
                 continue;
             }
             if (o.kind == OperandKind::None) fail("missing operand");

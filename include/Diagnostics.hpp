@@ -2,11 +2,15 @@
 
 #include <string>
 
-enum class DiagnosticSeverity { Error, Warning, Note };
+enum class Severity { Error, Warning, Note };
+enum class DiagStage { Lexical, Syntax, Semantic };
 
 struct Diagnostic {
-    DiagnosticSeverity severity = DiagnosticSeverity::Error;
+    Severity severity = Severity::Error;
+    DiagStage stage = DiagStage::Lexical;
     std::string message;
     int line = 0;
     int column = 0;
 };
+
+using DiagnosticSeverity = Severity;

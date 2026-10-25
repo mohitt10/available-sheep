@@ -11,6 +11,7 @@ This repository contains several standalone C++ components:
 
 - `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
 - `ir` — an intermediate-representation model with instruction validation, formatting, arithmetic evaluation, metrics, and an interpreter for programs with input/output.
+- `frontend` — a small lexer, parser, semantic analyzer, and IR generator for integer declarations, assignments, arithmetic/comparison expressions, input, and print statements.
 
 The project is structured as a single CMake build with library targets and automated tests.
 
@@ -26,8 +27,10 @@ The project is structured as a single CMake build with library targets and autom
 - `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
 - `include/Ir.hpp` / `src/Ir.cpp` — IR instructions, validation, evaluation, formatting, and metrics.
 - `include/Interpreter.hpp` / `src/Interpreter.cpp` — IR program interpreter.
+- `include/Token.hpp`, `include/Ast.hpp`, and the frontend headers/sources — tokenization, parsing, semantic checks, and IR generation.
 - `include/Diagnostics.hpp`, `include/Optimizertypes.hpp`, and `include/Resultmodel.hpp` — diagnostics and optimization-result data types.
 - `tests/Irtests.cpp` — IR and interpreter behavior checks.
+- `tests/Frontendtest.cpp` — end-to-end source compilation and frontend checks.
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 
@@ -35,7 +38,7 @@ The project is structured as a single CMake build with library targets and autom
 
 The project is fully wired together through CMake:
 
-- `expression_dag`, `avl_tree`, `identifier_trie`, and `ir` build as separate library targets.
+- `expression_dag`, `avl_tree`, `identifier_trie`, `ir`, and `frontend` build as separate library targets; `frontend` links to `ir`.
 - Each component has a corresponding test executable registered with CTest.
 - The optimizer header currently provides pass configuration and result data types; optimization passes are not implemented yet.
 

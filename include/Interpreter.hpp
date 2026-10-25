@@ -3,7 +3,7 @@
 #include <vector>
 #include "Ir.hpp"
  
-enum class RunStatus { Ok, DivisionByZero, InputExhausted };
+enum class RunStatus { Ok, DivisionByZero, InputExhausted, InvalidProgram };
  
 struct RunResult {
     RunStatus status = RunStatus::Ok;
