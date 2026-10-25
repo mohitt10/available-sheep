@@ -5,9 +5,57 @@ add_library(expression_dag src/expression_dag.cpp)
 target_include_directories(expression_dag PUBLIC include)
 target_compile_features(expression_dag PUBLIC cxx_std_17)
 
+add_library(avl_tree src/Avltree.cpp)
+target_include_directories(avl_tree PUBLIC include)
+target_compile_features(avl_tree PUBLIC cxx_std_17)
+
+add_library(identifier_trie src/identifier_trie.cpp)
+target_include_directories(identifier_trie PUBLIC include)
+target_compile_features(identifier_trie PUBLIC cxx_std_17)
+
+add_library(ir src/Ir.cpp src/Interpreter.cpp)
+target_include_directories(ir PUBLIC include)
+target_compile_features(ir PUBLIC cxx_std_17)
+
+add_library(frontend
+    src/Lexer.cpp
+    src/Parser.cpp
+    src/Semantic.cpp
+    src/Irgenerator.cpp
+    src/Frontend.cpp)
+target_include_directories(frontend PUBLIC include)
+target_compile_features(frontend PUBLIC cxx_std_17)
+target_link_libraries(frontend PUBLIC ir)
+
+find_package(Qt6 6.2 REQUIRED COMPONENTS Widgets)
+
+add_executable(available_sheep_app
+    app/main.cpp
+    app/MainWindow.cpp
+    app/MainWindow.hpp)
+target_include_directories(available_sheep_app PRIVATE include app)
+target_compile_features(available_sheep_app PRIVATE cxx_std_17)
+target_link_libraries(available_sheep_app PRIVATE frontend Qt6::Widgets)
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(expression_dag_test tests/expression_dag_test.cpp)
     target_link_libraries(expression_dag_test PRIVATE expression_dag)
     add_test(NAME expression_dag_test COMMAND expression_dag_test)
+
+    add_executable(avl_test tests/avl_test.cpp)
+    target_link_libraries(avl_test PRIVATE avl_tree)
+    add_test(NAME avl_test COMMAND avl_test)
+
+    add_executable(identifier_trie_test tests/identifier_trie_test.cpp)
+    target_link_libraries(identifier_trie_test PRIVATE identifier_trie)
+    add_test(NAME identifier_trie_test COMMAND identifier_trie_test)
+
+    add_executable(ir_test tests/Irtests.cpp)
+    target_link_libraries(ir_test PRIVATE ir avl_tree)
+    add_test(NAME ir_test COMMAND ir_test)
+
+    add_executable(frontend_test tests/Frontendtest.cpp)
+    target_link_libraries(frontend_test PRIVATE frontend)
+    add_test(NAME frontend_test COMMAND frontend_test)
 endif()

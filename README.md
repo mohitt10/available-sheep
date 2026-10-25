@@ -1,88 +1,98 @@
-# Expression DAG Branch
+# COMPILER OPTIMIZATION ENGINE
 
-## Purpose
+A small C++ project for expression-graph and AVL-tree utilities used in compiler-like data structures.
 
-This branch adds the expression DAG component for the compiler optimization
-engine. The DAG assigns expression IDs, records operand dependencies, reuses
-equivalent pure expressions, and exposes copied snapshots for consumers such
-as the optimizer, AVL index, and visualizer.
+## Overview
 
-The DAG does not parse source code, own the compiler IR, or perform optimizer
-passes. In particular, the optimizer remains responsible for rewriting IR uses
-when a pure expression is reused.
+This repository contains several standalone C++ components:
 
-## Files added
+- `expression_dag` — a DAG-backed expression registry that assigns stable IDs to expressions, tracks operand dependencies, reuses equivalent pure expressions, and exposes immutable snapshots.
+- `avl_tree` — an AVL tree implementation used to manage keyed expression metadata with balancing and validation checks.
 
-- `include/available_sheep/expression_dag.hpp` — public types and API.
-- `src/expression_dag.cpp` — node storage, pure-expression indexing, and graph
-  queries.
-- `tests/expression_dag_test.cpp` — focused behavior tests.
-- `CMakeLists.txt` — C++17 library and CTest setup.
+- `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
+- `ir` — an intermediate-representation model with instruction validation, formatting, arithmetic evaluation, metrics, and an interpreter for programs with input/output.
+- `frontend` — a small lexer, parser, semantic analyzer, and IR generator for integer declarations, assignments, arithmetic/comparison expressions, input, and print statements.
 
-## API overview
+The project is structured as a single CMake build with library targets, a Qt 6
+desktop application, and automated tests.
 
-The public API is in the `available_sheep` namespace:
+## Repository layout
 
-- `addPureExpression(key)` returns the existing ID for an equivalent pure
-  expression, or creates a new node.
-- `addEffectfulExpression(key)` always creates a new node and never inserts it
-  into the pure-expression index.
-- `findEquivalentPure(key)` finds a matching pure node, if one exists.
-- `operandsOf(id)` returns the node's ordered operand IDs.
-- `usersOf(id)` returns distinct user IDs in ascending order.
-- `snapshot()` returns copied node data sorted by ID.
-- `size()` returns the number of stored nodes.
+- `include/expression_dag.hpp` — expression DAG public API and types.
+- `src/expression_dag.cpp` — DAG node storage and graph logic.
+- `include/Avltree.hpp` — AVL tree interface.
+- `src/Avltree.cpp` — AVL balancing, insertion, deletion, and validation logic.
+- `tests/expression_dag_test.cpp` — DAG behavior and correctness checks.
+- `include/identifier_trie.hpp` / `src/identifier_trie.cpp` — identifier trie API and implementation.
+- `include/shared_types.hpp` — shared `SymbolId` definition (the single alias for symbol IDs).
+- `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
+- `include/Ir.hpp` / `src/Ir.cpp` — IR instructions, validation, evaluation, formatting, and metrics.
+- `include/Interpreter.hpp` / `src/Interpreter.cpp` — IR program interpreter.
+- `include/Token.hpp`, `include/Ast.hpp`, and the frontend headers/sources — tokenization, parsing, semantic checks, and IR generation.
+- `include/Diagnostics.hpp`, `include/Optimizertypes.hpp`, and `include/Resultmodel.hpp` — diagnostics and optimization-result data types.
+- `tests/Irtests.cpp` — IR and interpreter behavior checks.
+- `tests/Frontendtest.cpp` — end-to-end source compilation and frontend checks.
+- `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
+- `CMakeLists.txt` — workspace build configuration and CTest registration.
+- `app/` — Qt 6 Widgets application for source entry, frontend diagnostics, and initial IR display.
 
-`ExprId` is a 64-bit unsigned integer. IDs begin at `1`; `0` is reserved as
-invalid. `TypeId` is currently a 32-bit unsigned integer. `OperatorKind` and
-these aliases are provisional component definitions and should be reconciled
-with shared compiler/IR types before other components depend on them.
+## Integration status
 
-## Expression identity and graph behavior
+The project is fully wired together through CMake:
 
-An `ExpressionKey` contains the operator, result type, ordered operand IDs, and
-a vector of integer semantic attributes. All of these fields participate in
-equality and hashing. The hash is only used to locate candidates; full key
-equality determines whether expressions match.
+- `expression_dag`, `avl_tree`, `identifier_trie`, `ir`, and `frontend` build as separate library targets; `frontend` links to `ir`.
+- `available_sheep_app` provides source editing, frontend compilation, diagnostics, and initial IR display.
+- Each component has a corresponding test executable registered with CTest.
+- The optimizer header currently provides pass configuration and result data types; optimization passes are not implemented yet.
 
-Operand order and duplicate operands are preserved. For example, a node with
-operands `{x, x}` reports both entries from `operandsOf(x)` (more precisely,
-`operandsOf(node)`), while `usersOf(x)` lists that node once. The DAG does not
-canonicalize commutative operations.
-
-Operands must refer to nodes that already exist, which ensures newly created
-edges point to earlier nodes and the graph remains acyclic. Adding a node with
-an unknown operand throws `std::invalid_argument`; querying an unknown node ID
-throws `std::out_of_range`.
-
-Purity is selected by the caller using the insertion method. The component
-cannot infer whether an operation is safe to share. Callers must only use
-`addPureExpression` when reusing the expression is semantically valid, and
-must include every meaning-affecting value in `attributes`.
+The application reflects this status: optimization controls are disabled,
+optimized IR is not represented as if it had been produced, and the DAG/AVL/trie
+tabs report that engine snapshots are not yet available.
 
 ## Build and test
 
-From the repository root:
+From the project root:
 
 ```sh
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --preset host
+cmake --build --preset host
+ctest --preset host
 ```
 
-The focused tests cover ID creation, pure-expression reuse, key-field
-differences, effectful-expression non-merging, operand/user queries, invalid
-IDs, and deterministic copied snapshots.
+The `host` preset is for Linux with `/usr/bin/g++`, Ninja, and Qt 6 Widgets
+installed. CMake 3.21 or newer is required to use presets.
 
-## Integration notes
+## Example usage
 
-- Coordinate `ExprId`, `TypeId`, operator definitions, and expression
-  attributes with the optimizer and AVL-index owners before treating these
-  component types as shared contracts.
-- The optimizer can use the ID returned for a duplicate pure expression to
-  rewrite IR uses; IR mutation is outside this component.
-- The AVL index should use the same `ExprId` and should not duplicate DAG
-  dependencies.
-- The visualizer should consume `snapshot()` data and must not access mutable
-  graph internals.
-- Qt types are intentionally absent from the DAG API.
+The `ExpressionDag` API exposes operations such as:
+
+- `addPureExpression(key)`
+- `addEffectfulExpression(key)`
+- `findEquivalentPure(key)`
+- `operandsOf(id)`
+- `usersOf(id)`
+- `snapshot()`
+
+The AVL tree API exposes:
+
+- `insert(key, info)`
+- `erase(key)`
+- `find(key)`
+- `keysInOrder()`
+- `isValid()`
+
+The `IdentifierTrie` API exposes:
+
+- `insert(spelling, symbolId)`
+- `contains(spelling)` / `findExact(spelling)`
+- `findByPrefix(prefix, limit)`
+- `suggest(spelling, limit, maxEditDistance = 2)`
+- `snapshot()` (copied values for the GUI)
+
+The `ir` library exposes `Program` and `Instruction` types, validation and formatting helpers, arithmetic evaluation, metrics, and `run()` for interpreting a program with supplied input values.
+
+## Notes
+
+- `ExpressionDag` treats purity as caller-defined; equivalent pure expressions are merged only when the caller chooses `addPureExpression`.
+- Operand IDs must already exist in the graph, so the DAG stays acyclic and deterministic.
+- The AVL tree validates structural balance and maintains a rotation log for debugging.
