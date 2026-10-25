@@ -17,6 +17,7 @@ The project is structured as a single CMake build with library targets, a Qt 6
 desktop application, and automated tests.
 
 ## Repository layout
+## Repository layout
 
 - `include/expression_dag.hpp` — expression DAG public API and types.
 - `src/expression_dag.cpp` — DAG node storage and graph logic.
@@ -51,6 +52,7 @@ tabs report that engine snapshots are not yet available.
 
 ## Build and test
 
+From the project root:
 From the project root:
 
 ```sh

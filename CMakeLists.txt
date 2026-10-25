@@ -58,4 +58,20 @@ if(BUILD_TESTING)
     add_executable(frontend_test tests/Frontendtest.cpp)
     target_link_libraries(frontend_test PRIVATE frontend)
     add_test(NAME frontend_test COMMAND frontend_test)
+
+    add_executable(avl_test tests/avl_test.cpp)
+    target_link_libraries(avl_test PRIVATE avl_tree)
+    add_test(NAME avl_test COMMAND avl_test)
+
+    add_executable(identifier_trie_test tests/identifier_trie_test.cpp)
+    target_link_libraries(identifier_trie_test PRIVATE identifier_trie)
+    add_test(NAME identifier_trie_test COMMAND identifier_trie_test)
+
+    add_executable(ir_test tests/Irtests.cpp)
+    target_link_libraries(ir_test PRIVATE ir avl_tree)
+    add_test(NAME ir_test COMMAND ir_test)
+
+    add_executable(frontend_test tests/Frontendtest.cpp)
+    target_link_libraries(frontend_test PRIVATE frontend)
+    add_test(NAME frontend_test COMMAND frontend_test)
 endif()
