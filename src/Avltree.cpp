@@ -118,6 +118,15 @@ ExprInfo* AVLTree::find(const std::string& key) {
     }
     return nullptr;
 }
+
+int AVLTree::heightOfKey(const std::string& key) const {
+    const AVLNode* node = root;
+    while (node) {
+        if (key == node->key) return node->height;
+        node = (key < node->key) ? node->left : node->right;
+    }
+    return 0;
+}
  
 static void collectKeys(AVLNode* n, std::vector<std::string>& out) {
     if (!n) return;

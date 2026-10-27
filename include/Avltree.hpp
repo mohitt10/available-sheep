@@ -28,6 +28,7 @@ public:
     bool insert(const std::string& key, const ExprInfo& info);
     bool erase(const std::string& key);
     ExprInfo* find(const std::string& key);
+    int heightOfKey(const std::string& key) const;
     bool contains(const std::string& key) { return find(key) != nullptr; }
  
     int size() const { return count; }
