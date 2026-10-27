@@ -4,10 +4,15 @@
 #include "Parser.hpp"
 #include "Semantic.hpp"
 
-FrontendResult compileSource(const std::string& source, SymbolRegistry& registry) {
+FrontendResult compileSource(const std::string& source, SymbolRegistry& registry,
+                             available_sheep::IdentifierTrie* trie) {
     FrontendResult result;
 
-    std::vector<Token> tokens = tokenize(source, registry, result.diagnostics);
+    available_sheep::IdentifierTrie localTrie;
+    available_sheep::IdentifierTrie& activeTrie = trie ? *trie : localTrie;
+    std::vector<Token> tokens =
+        tokenize(source, registry, result.diagnostics, &activeTrie);
+    result.identifierIndex = activeTrie.snapshot();
     if (!result.diagnostics.empty()) return result;
 
     Ast ast = parse(tokens, result.diagnostics);

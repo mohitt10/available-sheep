@@ -99,7 +99,7 @@ const char* opcodeText(Opcode op) {
     return "";
 }
 
-Instruction makeInstruction(Opcode op, Operand dst, Operand a, Operand b, int line) {
+Instruction makeInstruction(Opcode op, Operand dst, Operand a, Operand b, int line, int column) {
     Instruction ins;
     ins.op = op;
     ins.dst = dst;
@@ -107,6 +107,7 @@ Instruction makeInstruction(Opcode op, Operand dst, Operand a, Operand b, int li
     ins.b = b;
     ins.effect = effectOf(op);
     ins.line = line;
+    ins.column = column;
     return ins;
 }
 
@@ -204,6 +205,7 @@ std::vector<std::string> validate(const Program& p) {
             fail("invalid opcode");
             continue;
         }
+        if (ins.type != IrType::Int32) fail("unsupported instruction type");
 
         if (ins.effect != effectOf(ins.op)) fail("effect does not match opcode");
 
@@ -243,6 +245,9 @@ std::vector<std::string> validate(const Program& p) {
             fail("destination must be a temp or symbol");
         }
     }
+    for (const SymbolInfo& symbol : p.symbols)
+        if (symbol.type != IrType::Int32)
+            errors.push_back("symbol '" + symbol.name + "' has an unsupported type");
     return errors;
 }
 

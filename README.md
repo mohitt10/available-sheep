@@ -17,7 +17,6 @@ The project is structured as a single CMake build with library targets, a Qt 6
 desktop application, and automated tests.
 
 ## Repository layout
-## Repository layout
 
 - `include/expression_dag.hpp` — expression DAG public API and types.
 - `src/expression_dag.cpp` — DAG node storage and graph logic.
@@ -29,30 +28,37 @@ desktop application, and automated tests.
 - `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
 - `include/Ir.hpp` / `src/Ir.cpp` — IR instructions, validation, evaluation, formatting, and metrics.
 - `include/Interpreter.hpp` / `src/Interpreter.cpp` — IR program interpreter.
+- `include/Optimizer.hpp` / `src/Optimizer.cpp` — optimization passes, fixed-point driver, DAG and AVL snapshots.
 - `include/Token.hpp`, `include/Ast.hpp`, and the frontend headers/sources — tokenization, parsing, semantic checks, and IR generation.
 - `include/Diagnostics.hpp`, `include/Optimizertypes.hpp`, and `include/Resultmodel.hpp` — diagnostics and optimization-result data types.
 - `tests/Irtests.cpp` — IR and interpreter behavior checks.
 - `tests/Frontendtest.cpp` — end-to-end source compilation and frontend checks.
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
-- `app/` — Qt 6 Widgets application for source entry, frontend diagnostics, and initial IR display.
+- `app/` — Qt 6 Widgets application for source entry, diagnostics, initial/optimized IR, and engine snapshots.
 
-## Integration status
+## Supported language and integration
 
-The project is fully wired together through CMake:
+The frontend accepts integer declarations with initializers, assignments, and
+`print(expr);` statements. Expressions support `input()`, parentheses, unary
+`-`/`!`, arithmetic, and integer comparisons. Line (`//`) and block (`/* */`)
+comments are accepted. Integers use signed 32-bit wrapping arithmetic; division
+and remainder by zero remain runtime traps.
 
-- `expression_dag`, `avl_tree`, `identifier_trie`, `ir`, and `frontend` build as separate library targets; `frontend` links to `ir`.
-- `available_sheep_app` provides source editing, frontend compilation, diagnostics, and initial IR display.
-- Each component has a corresponding test executable registered with CTest.
-- The optimizer header currently provides pass configuration and result data types; optimization passes are not implemented yet.
+The frontend emits deterministic, typed Int32 IR with source locations and
+effect classifications. The optimizer runs constant folding, constant
+propagation, common-subexpression elimination, and dead-code elimination in
+that order until a no-change iteration, a repeated state, or the configured
+iteration limit. Each result retains both the initial and optimized IR, pass
+statistics, metrics, and copied DAG/AVL/trie snapshots.
 
-The application reflects this status: optimization controls are disabled,
-optimized IR is not represented as if it had been produced, and the DAG/AVL/trie
-tabs report that engine snapshots are not yet available.
+`expression_dag`, `avl_tree`, `identifier_trie`, `ir`, `frontend`, and
+`optimizer` build as separate libraries. When Qt 6 Widgets is installed, CMake
+also builds `available_sheep_app`, which exposes the pass controls and presents
+diagnostics, IR, convergence details, and data-structure snapshots.
 
 ## Build and test
 
-From the project root:
 From the project root:
 
 ```sh
@@ -61,8 +67,9 @@ cmake --build --preset host
 ctest --preset host
 ```
 
-The `host` preset is for Linux with `/usr/bin/g++`, Ninja, and Qt 6 Widgets
-installed. CMake 3.21 or newer is required to use presets.
+The `host` preset is for Linux with `/usr/bin/g++` and Ninja. Qt 6 Widgets is
+optional for the libraries and tests; without it, CMake skips the desktop app.
+CMake 3.21 or newer is required to use presets.
 
 ## Example usage
 

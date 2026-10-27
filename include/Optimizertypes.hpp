@@ -39,7 +39,7 @@ struct IterationReport {
     bool changed = false;
 };
  
-enum class Convergence { Converged, IterationLimit };
+enum class Convergence { Converged, IterationLimit, RepeatedState };
  
 struct IrMetrics {
     int instructions = 0;

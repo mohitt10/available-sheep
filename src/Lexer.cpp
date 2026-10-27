@@ -26,7 +26,8 @@ bool isDigit(char c) {
 }
 
 std::vector<Token> tokenize(const std::string& src, SymbolRegistry& registry,
-                            std::vector<Diagnostic>& diagnostics) {
+                            std::vector<Diagnostic>& diagnostics,
+                            available_sheep::IdentifierTrie* trie) {
     std::vector<Token> tokens;
     std::size_t i = 0;
     int line = 1;
@@ -120,6 +121,7 @@ std::vector<Token> tokenize(const std::string& src, SymbolRegistry& registry,
             else {
                 t.kind = TokenKind::Ident;
                 t.symbol = registry.idFor(t.text);
+                if (trie) trie->insert(t.text, t.symbol);
             }
             tokens.push_back(t);
             continue;

@@ -1,5 +1,6 @@
 #include "Frontend.hpp"
 #include "Interpreter.hpp"
+#include "Parser.hpp"
 #include <cassert>
 #include <climits>
 #include <cstdio>
@@ -160,6 +161,33 @@ static void testRegistry() {
     assert(r.program.symbols[0].id != r.program.symbols[1].id);
 }
 
+static void testSourceLocationsAndTrie() {
+    SimpleSymbolRegistry registry;
+    available_sheep::IdentifierTrie trie;
+    FrontendResult result =
+        compileSource("int item = 1 + 2;\nprint(item);", registry, &trie);
+    assert(result.success);
+    assert(result.program.code[0].line == 1);
+    assert(result.program.code[0].column == 14);
+    assert(result.program.code[1].column == 1);
+    assert(trie.contains("item"));
+    const std::vector<SymbolId> ids = trie.findExact("item");
+    assert(ids.size() == 1 && ids[0] == result.program.symbols[0].id);
+    assert(!result.identifierIndex.empty());
+
+    FrontendResult localIndex = compile("int local = 1;");
+    assert(localIndex.success);
+    assert(localIndex.identifierIndex.size() == 1);
+    assert(localIndex.identifierIndex.front().spelling == "local");
+
+    std::vector<Token> missingEnd;
+    std::vector<Diagnostic> diagnostics;
+    Ast invalid = parse(missingEnd, diagnostics);
+    assert(invalid.statements.empty());
+    assert(diagnostics.size() == 1);
+    assert(diagnostics.front().stage == DiagStage::Syntax);
+}
+
 int main() {
     testSampleProgram();
     testDeterministic();
@@ -171,5 +199,6 @@ int main() {
     testSyntaxErrors();
     testSemanticErrors();
     testRegistry();
+    testSourceLocationsAndTrie();
     std::puts("frontend tests passed");
 }

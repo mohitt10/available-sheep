@@ -34,4 +34,3 @@ struct Stmt {
 struct Ast {
     std::vector<Stmt> statements;
 };
- 

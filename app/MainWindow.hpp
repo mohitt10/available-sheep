@@ -2,13 +2,13 @@
 
 #include <QMainWindow>
 
-#include "SymbolRegistry.hpp"
-
-struct FrontendResult;
-
 class QCheckBox;
+class QGroupBox;
+class QLineEdit;
 class QPlainTextEdit;
+class QPushButton;
 class QSpinBox;
+struct PipelineResult;
 
 class MainWindow final : public QMainWindow {
 public:
@@ -16,9 +16,9 @@ public:
 
 private:
     void compileSource();
-    void showFrontendFailure(const FrontendResult& result);
-    void showFrontendSuccess(const FrontendResult& result);
+    void showPipelineResult(const PipelineResult& result);
 
+    QGroupBox* sourceGroup_ = nullptr;
     QPlainTextEdit* sourceEditor_ = nullptr;
     QPlainTextEdit* initialIrView_ = nullptr;
     QPlainTextEdit* optimizedIrView_ = nullptr;
@@ -27,7 +27,8 @@ private:
     QPlainTextEdit* dagView_ = nullptr;
     QPlainTextEdit* avlView_ = nullptr;
     QPlainTextEdit* trieView_ = nullptr;
+    QLineEdit* trieQuery_ = nullptr;
+    QPushButton* runButton_ = nullptr;
     QCheckBox* passOptions_[4]{};
     QSpinBox* iterationLimit_ = nullptr;
-    SimpleSymbolRegistry symbolRegistry_;
 };

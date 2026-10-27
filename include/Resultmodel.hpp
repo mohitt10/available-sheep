@@ -5,8 +5,10 @@
 #include "Diagnostics.hpp"
 #include "Ir.hpp"
 #include "Optimizertypes.hpp"
+#include "expression_dag.hpp"
+#include "identifier_trie.hpp"
 
-enum class RunOutcome { FrontendFailed, Optimized };
+enum class RunOutcome { FrontendFailed, OptimizationFailed, Optimized };
 
 struct ExprMetadata {
     int dagNodeId = -1;
@@ -40,5 +42,7 @@ struct OptimizationResult {
     std::vector<ExprMetadata> avlOrdered;
     std::vector<AvlNodeSnapshot> avlNodes;
     std::vector<RotationEvent> avlRotations;
+    std::vector<available_sheep::ExpressionNodeSnapshot> dagNodes;
+    std::vector<available_sheep::TrieEntry> trieEntries;
 };
  

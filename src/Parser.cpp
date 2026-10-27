@@ -1,5 +1,7 @@
 #include "Parser.hpp"
 
+#include <utility>
+
 namespace {
 
 struct ParseError {};
@@ -237,6 +239,29 @@ private:
 }
 
 Ast parse(const std::vector<Token>& tokens, std::vector<Diagnostic>& diagnostics) {
+    if (tokens.empty() || tokens.back().kind != TokenKind::End) {
+        Diagnostic diagnostic;
+        diagnostic.severity = Severity::Error;
+        diagnostic.stage = DiagStage::Syntax;
+        diagnostic.message = "token stream is missing its end-of-input marker";
+        if (!tokens.empty()) {
+            diagnostic.line = tokens.back().line;
+            diagnostic.column = tokens.back().column;
+        }
+        diagnostics.push_back(std::move(diagnostic));
+        return {};
+    }
+    for (std::size_t i = 0; i + 1 < tokens.size(); ++i) {
+        if (tokens[i].kind != TokenKind::End) continue;
+        Diagnostic diagnostic;
+        diagnostic.severity = Severity::Error;
+        diagnostic.stage = DiagStage::Syntax;
+        diagnostic.line = tokens[i].line;
+        diagnostic.column = tokens[i].column;
+        diagnostic.message = "unexpected end-of-input marker before the end of the token stream";
+        diagnostics.push_back(std::move(diagnostic));
+        return {};
+    }
     Parser parser(tokens, diagnostics);
     return parser.parseProgram();
 }

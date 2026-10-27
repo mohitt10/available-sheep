@@ -25,17 +25,26 @@ add_library(frontend
     src/Frontend.cpp)
 target_include_directories(frontend PUBLIC include)
 target_compile_features(frontend PUBLIC cxx_std_17)
-target_link_libraries(frontend PUBLIC ir)
+target_link_libraries(frontend PUBLIC ir identifier_trie)
 
-find_package(Qt6 6.2 REQUIRED COMPONENTS Widgets)
+add_library(optimizer src/Optimizer.cpp)
+target_include_directories(optimizer PUBLIC include)
+target_compile_features(optimizer PUBLIC cxx_std_17)
+target_link_libraries(optimizer PUBLIC ir expression_dag avl_tree identifier_trie)
 
-add_executable(available_sheep_app
-    app/main.cpp
-    app/MainWindow.cpp
-    app/MainWindow.hpp)
-target_include_directories(available_sheep_app PRIVATE include app)
-target_compile_features(available_sheep_app PRIVATE cxx_std_17)
-target_link_libraries(available_sheep_app PRIVATE frontend Qt6::Widgets)
+find_package(Qt6 6.2 QUIET COMPONENTS Widgets Concurrent)
+if(Qt6_FOUND)
+    add_executable(available_sheep_app
+        app/main.cpp
+        app/MainWindow.cpp
+        app/MainWindow.hpp)
+    target_include_directories(available_sheep_app PRIVATE include app)
+    target_compile_features(available_sheep_app PRIVATE cxx_std_17)
+    target_link_libraries(available_sheep_app PRIVATE
+        frontend optimizer Qt6::Widgets Qt6::Concurrent)
+else()
+    message(STATUS "Qt6 Widgets/Concurrent not found; skipping available_sheep_app")
+endif()
 
 include(CTest)
 if(BUILD_TESTING)
@@ -59,19 +68,7 @@ if(BUILD_TESTING)
     target_link_libraries(frontend_test PRIVATE frontend)
     add_test(NAME frontend_test COMMAND frontend_test)
 
-    add_executable(avl_test tests/avl_test.cpp)
-    target_link_libraries(avl_test PRIVATE avl_tree)
-    add_test(NAME avl_test COMMAND avl_test)
-
-    add_executable(identifier_trie_test tests/identifier_trie_test.cpp)
-    target_link_libraries(identifier_trie_test PRIVATE identifier_trie)
-    add_test(NAME identifier_trie_test COMMAND identifier_trie_test)
-
-    add_executable(ir_test tests/Irtests.cpp)
-    target_link_libraries(ir_test PRIVATE ir avl_tree)
-    add_test(NAME ir_test COMMAND ir_test)
-
-    add_executable(frontend_test tests/Frontendtest.cpp)
-    target_link_libraries(frontend_test PRIVATE frontend)
-    add_test(NAME frontend_test COMMAND frontend_test)
+    add_executable(optimizer_test tests/OptimizerTests.cpp)
+    target_link_libraries(optimizer_test PRIVATE optimizer frontend)
+    add_test(NAME optimizer_test COMMAND optimizer_test)
 endif()

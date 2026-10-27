@@ -12,8 +12,9 @@ enum class Opcode {
 };
  
 enum class Effect { Pure, MayTrap, ReadsInput, WritesOutput };
- 
+
 enum class OperandKind { None, Const, Temp, Symbol };
+enum class IrType { Int32 };
  
 struct Operand {
     OperandKind kind = OperandKind::None;
@@ -37,11 +38,14 @@ struct Instruction {
     Operand b;
     Effect effect = Effect::Pure;
     int line = 0;
+    int column = 0;
+    IrType type = IrType::Int32;
 };
- 
+
 struct SymbolInfo {
     SymbolId id = 0;
     std::string name;
+    IrType type = IrType::Int32;
 };
  
 struct Program {
@@ -50,7 +54,8 @@ struct Program {
     std::uint32_t tempCount = 0;
 };
  
-Instruction makeInstruction(Opcode op, Operand dst, Operand a = Operand(), Operand b = Operand(), int line = 0);
+Instruction makeInstruction(Opcode op, Operand dst, Operand a = Operand(), Operand b = Operand(),
+                            int line = 0, int column = 0);
  
 Effect effectOf(Opcode op);
 int operandCount(Opcode op);

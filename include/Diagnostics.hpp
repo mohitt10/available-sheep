@@ -3,7 +3,7 @@
 #include <string>
 
 enum class Severity { Error, Warning, Note };
-enum class DiagStage { Lexical, Syntax, Semantic };
+enum class DiagStage { Lexical, Syntax, Semantic, Optimization };
 
 struct Diagnostic {
     Severity severity = Severity::Error;
