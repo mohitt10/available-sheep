@@ -1,17 +1,27 @@
-# COMPILER OPTIMIZATION ENGINE
+# Compiler Optimization Engine
 
-A small C++ project for expression-graph and AVL-tree utilities used in compiler-like data structures.
+A Qt-free C++17 compiler frontend and optimization engine with reusable
+expression, identifier, and metadata indexes.
 
 ## Overview
 
-This repository contains two integrated C++ components:
+The native pipeline accepts a restricted C-like language, builds and validates
+an initial three-address IR, runs an optimization pipeline, and exposes copied
+IR/data-structure snapshots and per-pass statistics.
 
-- `expression_dag` — a DAG-backed expression registry that assigns stable IDs to expressions, tracks operand dependencies, reuses equivalent pure expressions, and exposes immutable snapshots.
-- `avl_tree` — an AVL tree implementation used to manage keyed expression metadata with balancing and validation checks.
+- `frontend` — lexer, parser, semantic checks, and initial IR generation.
+- `optimizer` — constant folding, constant propagation, common
+  subexpression elimination, dead-code elimination, and fixed-point
+  orchestration.
+- `expression_dag` — typed expression keys, operand dependencies, reuse of
+  equivalent pure expressions, and deterministic value snapshots.
+- `avl_tree` — an `ExprId`-keyed metadata index with lookup/update/deletion,
+  ordered snapshots, balance validation, and typed rotation events.
+- `identifier_trie` — exact identifier lookup, prefix search, and spelling
+  suggestions; scope resolution remains the frontend's responsibility.
 
-- `identifier_trie` — a Qt-free identifier index (case-sensitive) with exact lookup, prefix search and edit-distance spelling suggestions; it stores spellings and their `SymbolId`s only.
-
-The project is structured as a single CMake build with library targets and automated tests.
+The project is organized as CMake libraries with CTest coverage; no Qt
+dependency is required for the compiler or optimizer libraries.
 
 ## Repository layout
 
@@ -21,19 +31,21 @@ The project is structured as a single CMake build with library targets and autom
 - `src/Avltree.cpp` — AVL balancing, insertion, deletion, and validation logic.
 - `tests/expression_dag_test.cpp` — DAG behavior and correctness checks.
 - `include/identifier_trie.hpp` / `src/identifier_trie.cpp` — identifier trie API and implementation.
-- `include/shared_types.hpp` — shared `SymbolId` definition (the single alias for symbol IDs).
+- `include/shared_types.hpp` — canonical `SymbolId`, `ExprId`, and `TypeId`
+  definitions.
+- `include/Optimizer.hpp` / `src/Optimizer.cpp` — pass interface,
+  transformations, orchestration, and visualization snapshots.
+- `tests/OptimizerTests.cpp` — pass semantics, fixed-point behavior, limits,
+  and snapshot tests.
 - `tests/identifier_trie_test.cpp` — trie behavior checks (including a brute-force comparison for suggestions).
 - `tests/avl_test.cpp` — AVL tree insertion, balancing, and validation checks.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 
 ## Integration status
 
-The project is fully wired together through CMake:
-
-- `expression_dag` builds as a library target.
-- `avl_tree` builds as a separate library target.
-- Both test executables are linked to their respective libraries and added to CTest.
-- The repository currently builds cleanly and passes all tests in the default configuration.
+All components and tests are wired through CMake. Optimization results include
+the initial and optimized IR, before/after metrics, pass-level reports,
+convergence status, and copied DAG/AVL/trie snapshots.
 
 ## Build and test
 
@@ -47,7 +59,7 @@ ctest --test-dir build --output-on-failure
 
 ## Example usage
 
-The `ExpressionDag` API exposes operations such as:
+The `ExpressionDag` API exposes:
 
 - `addPureExpression(key)`
 - `addEffectfulExpression(key)`
@@ -56,24 +68,28 @@ The `ExpressionDag` API exposes operations such as:
 - `usersOf(id)`
 - `snapshot()`
 
-The AVL tree API exposes:
+The optimizer API exposes:
 
-- `insert(key, info)`
-- `erase(key)`
-- `find(key)`
-- `keysInOrder()`
-- `isValid()`
+- `makeOptimizationPass(kind)` for individual passes.
+- `optimizeProgram(initialIr, options, trie)` for the ordered fixed-point run.
+
+The AVL tree API is keyed by shared `ExprId` values and provides:
+
+- `insert(id, info)` / `update(id, info)` / `erase(id)` / `find(id)`.
+- `snapshot()` in ascending `ExprId` order.
+- `rotationEvents()` with typed single/double rotation records.
 
 The `IdentifierTrie` API exposes:
 
-- `insert(spelling, symbolId)`
-- `contains(spelling)` / `findExact(spelling)`
-- `findByPrefix(prefix, limit)`
-- `suggest(spelling, limit, maxEditDistance = 2)`
-- `snapshot()` (copied values for the GUI)
+- `insert(spelling, symbolId)`, `findExact(spelling)`, and `contains(spelling)`.
+- `findByPrefix(prefix, limit)` and `suggest(spelling, limit, distance)`.
+- `snapshot()` for a copied, lexicographically ordered view.
 
-## Notes
+## Semantics
 
-- `ExpressionDag` treats purity as caller-defined; equivalent pure expressions are merged only when the caller chooses `addPureExpression`.
-- Operand IDs must already exist in the graph, so the DAG stays acyclic and deterministic.
-- The AVL tree validates structural balance and maintains a rotation log for debugging.
+- The optimizer runs constant folding, constant propagation, CSE, and DCE in
+  that order until no pass changes the IR or the iteration limit is reached.
+- Operations that may trap are not removed or merged unsafely; observable
+  input/output effects are preserved.
+- DAG operands must already exist, keeping expression dependencies acyclic.
+- Shared IDs are defined once in `shared_types.hpp`.
