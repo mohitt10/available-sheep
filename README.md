@@ -41,22 +41,19 @@ desktop application, and automated tests.
 - `CMakeLists.txt` — workspace build configuration and CTest registration.
 - `app/` — Qt 6 Widgets application for source entry, diagnostics, initial/optimized IR, and engine snapshots.
 
-<<<<<<< HEAD
 ## Implementation status
 
-CMake currently defines three library targets and three corresponding CTest
-executables. The components have standalone implementations, but integration
-is not yet complete: the AVL implementation is string-keyed rather than the
-planned `ExprId` metadata index. Build and test status must be verified with a
-native compiler; the last attempted configuration selected an ARM bare-metal
-compiler and failed before project sources were compiled.
+The repository includes the frontend, optimizer, Qt application, and six CTest
+tests. The AVL expression index uses typed `ExprId` keys and returns copied
+snapshots and typed rotation events. The native Debug build and all six tests
+passed on 2026-10-27.
 
 See the [final implementation plan](docs/final-implementation-plan.md) for
 project scope, component contracts, completion criteria, and the recommended
 work order. The [DAG](docs/implementation-plan-dag.md),
 [AVL](docs/implementation-plan-avl.md), and
 [trie](docs/implementation-plan-trie.md) documents contain component details.
-=======
+
 ## Supported language and integration
 
 The frontend accepts integer declarations with initializers, assignments, and
@@ -76,7 +73,6 @@ statistics, metrics, and copied DAG/AVL/trie snapshots.
 `optimizer` build as separate libraries. When Qt 6 Widgets is installed, CMake
 also builds `available_sheep_app`, which exposes the pass controls and presents
 diagnostics, IR, convergence details, and data-structure snapshots.
->>>>>>> origin/dev_amolika
 
 ## Build and test
 
@@ -92,6 +88,60 @@ The `host` preset is for Linux with `/usr/bin/g++` and Ninja. Qt 6 Widgets is
 optional for the libraries and tests; without it, CMake skips the desktop app.
 CMake 3.21 or newer is required to use presets.
 
+## Run the application
+
+After configuring and building with a native compiler, run the app from the
+project root:
+
+```sh
+./build/typed-avl-host/available_sheep_app
+```
+
+If you built with a different build directory, use that directory's
+`available_sheep_app` path instead.
+
+When launching from the Snap-packaged VS Code terminal, the app may inherit
+GTK paths for VS Code's bundled libraries and fail to load due to a glibc
+version mismatch. Clear those GTK variables for this launch:
+
+```sh
+env -u GTK_PATH -u GTK_MODULES -u GTK_EXE_PREFIX -u GTK_IM_MODULE_FILE \
+  ./build/typed-avl-host/available_sheep_app
+```
+
+This only changes the environment of the launched process; it does not modify
+system libraries or shell configuration. Launching from a regular system
+terminal is another option.
+
+## Using the application
+
+The window opens with a sample program. Edit the source and click **Run
+pipeline** (or press Enter while the button is focused) to compile and
+optimize it locally. During processing, the source controls are disabled and
+the status bar indicates that the pipeline is running.
+
+- **Optimization options:** enable or disable constant folding, constant
+  propagation, common-subexpression elimination, and dead-code elimination;
+  set the maximum number of fixed-point iterations.
+- **IR:** compare the frontend's initial IR with the optimizer's output.
+- **Diagnostics:** inspect lexical, syntax, semantic, and optimization
+  messages, including source locations when available.
+- **Results:** see whether optimization succeeded, convergence status,
+  iterations, before/after instruction metrics, and per-pass rewrite/removal
+  counts.
+- **Data structures / DAG:** inspect expression IDs, operators, operand IDs,
+  types, and purity.
+- **Data structures / AVL:** inspect expression IDs, use counts, node heights,
+  and typed rotation events.
+- **Data structures / Trie:** inspect indexed identifiers and enter a query
+  to see exact matches, prefix matches, and spelling suggestions. Prefix
+  matches and suggestions are each limited to ten results; suggestions use an
+  edit-distance limit of two.
+
+The application compiles and optimizes the entered source and displays its
+IR; it does not currently provide a UI action to execute the resulting
+program or supply runtime input values.
+
 ## Example usage
 
 The `ExpressionDag` API exposes operations such as:
@@ -105,10 +155,11 @@ The `ExpressionDag` API exposes operations such as:
 
 The AVL tree API exposes:
 
-- `insert(key, info)`
-- `erase(key)`
-- `find(key)`
-- `keysInOrder()`
+- `insert(exprId, info)` / `update(exprId, info)`
+- `erase(exprId)`
+- `find(exprId)`
+- `snapshot()` (copied entries in numeric ID order)
+- `rotationEvents()` (typed rotation kind and pivot ID)
 - `isValid()`
 
 The `IdentifierTrie` API exposes:

@@ -15,6 +15,7 @@
 #include <QPushButton>
 #include <QStringList>
 #include <QSpinBox>
+#include <QStatusBar>
 #include <QSplitter>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -205,16 +206,29 @@ QString dagText(const OptimizationResult& result) {
 QString avlText(const OptimizationResult& result) {
     QStringList lines;
     for (const AvlNodeSnapshot& node : result.avlNodes) {
-        lines.push_back(QStringLiteral("%1: dag=%2 uses=%3 height=%4")
-                            .arg(QString::fromStdString(node.key))
-                            .arg(node.info.dagNodeId)
-                            .arg(node.info.useCount)
+        lines.push_back(QStringLiteral("e%1: uses=%2 height=%3")
+                            .arg(static_cast<qulonglong>(node.id))
+                            .arg(static_cast<qulonglong>(node.info.useCount))
                             .arg(node.height));
     }
     if (!result.avlRotations.empty()) {
         lines.push_back(QStringLiteral("\nRotations:"));
-        for (const RotationEvent& rotation : result.avlRotations)
-            lines.push_back(QString::fromStdString(rotation.description));
+        for (const RotationEvent& rotation : result.avlRotations) {
+            QString kind;
+            switch (rotation.kind) {
+                case AvlRotationKind::Left: kind = QStringLiteral("Left"); break;
+                case AvlRotationKind::Right: kind = QStringLiteral("Right"); break;
+                case AvlRotationKind::LeftRight:
+                    kind = QStringLiteral("LeftRight");
+                    break;
+                case AvlRotationKind::RightLeft:
+                    kind = QStringLiteral("RightLeft");
+                    break;
+            }
+            lines.push_back(QStringLiteral("%1 at e%2")
+                                .arg(kind)
+                                .arg(static_cast<qulonglong>(rotation.pivot)));
+        }
     }
     if (lines.empty()) return QStringLiteral("No expression metadata.");
     return lines.join(QLatin1Char('\n'));

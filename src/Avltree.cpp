@@ -1,155 +1,189 @@
 #include "Avltree.hpp"
+
 #include <algorithm>
 #include <cstdlib>
- 
-void AVLTree::updateHeight(AVLNode* n) {
-    n->height = 1 + std::max(heightOf(n->left), heightOf(n->right));
+#include <optional>
+
+namespace {
+
+void collectSnapshots(const AVLNode* node,
+                      std::vector<AvlEntrySnapshot>& result) {
+    if (!node) return;
+    collectSnapshots(node->left, result);
+    result.push_back({node->id, node->info, node->height});
+    collectSnapshots(node->right, result);
 }
- 
-void AVLTree::destroy(AVLNode* n) {
-    if (!n) return;
-    destroy(n->left);
-    destroy(n->right);
-    delete n;
+
+int validateNode(const AVLNode* node,
+                 std::optional<available_sheep::ExprId> lower,
+                 std::optional<available_sheep::ExprId> upper,
+                 std::size_t& count, bool& valid) {
+    if (!node) return 0;
+    if ((lower && node->id <= *lower) || (upper && node->id >= *upper))
+        valid = false;
+
+    const int leftHeight = validateNode(node->left, lower, node->id, count, valid);
+    const int rightHeight = validateNode(node->right, node->id, upper, count, valid);
+    ++count;
+    const int expectedHeight = 1 + std::max(leftHeight, rightHeight);
+    if (node->height != expectedHeight ||
+        std::abs(leftHeight - rightHeight) > 1)
+        valid = false;
+    return expectedHeight;
 }
- 
-AVLNode* AVLTree::rotateRight(AVLNode* y) {
-    AVLNode* x = y->left;
-    y->left = x->right;
-    x->right = y;
-    updateHeight(y);
-    updateHeight(x);
-    return x;
+
+}  // namespace
+
+void AVLTree::updateHeight(AVLNode* node) {
+    node->height = 1 + std::max(heightOf(node->left), heightOf(node->right));
 }
- 
-AVLNode* AVLTree::rotateLeft(AVLNode* x) {
-    AVLNode* y = x->right;
-    x->right = y->left;
-    y->left = x;
-    updateHeight(x);
-    updateHeight(y);
-    return y;
+
+void AVLTree::destroy(AVLNode* node) {
+    if (!node) return;
+    destroy(node->left);
+    destroy(node->right);
+    delete node;
 }
- 
-AVLNode* AVLTree::rebalance(AVLNode* n) {
-    updateHeight(n);
-    int balance = balanceOf(n);
- 
+
+AVLNode* AVLTree::rotateRight(AVLNode* rootNode) {
+    AVLNode* newRoot = rootNode->left;
+    rootNode->left = newRoot->right;
+    newRoot->right = rootNode;
+    updateHeight(rootNode);
+    updateHeight(newRoot);
+    return newRoot;
+}
+
+AVLNode* AVLTree::rotateLeft(AVLNode* rootNode) {
+    AVLNode* newRoot = rootNode->right;
+    rootNode->right = newRoot->left;
+    newRoot->left = rootNode;
+    updateHeight(rootNode);
+    updateHeight(newRoot);
+    return newRoot;
+}
+
+AVLNode* AVLTree::rebalance(AVLNode* node) {
+    if (!node) return nullptr;
+    updateHeight(node);
+    const int balance = balanceOf(node);
+
     if (balance > 1) {
-        if (balanceOf(n->left) < 0) {
-            log.push_back("LeftRight at " + n->key);
-            n->left = rotateLeft(n->left);
+        if (balanceOf(node->left) < 0) {
+            rotations.push_back({AvlRotationKind::LeftRight, node->id});
+            node->left = rotateLeft(node->left);
         } else {
-            log.push_back("Right at " + n->key);
+            rotations.push_back({AvlRotationKind::Right, node->id});
         }
-        return rotateRight(n);
+        return rotateRight(node);
     }
- 
+
     if (balance < -1) {
-        if (balanceOf(n->right) > 0) {
-            log.push_back("RightLeft at " + n->key);
-            n->right = rotateRight(n->right);
+        if (balanceOf(node->right) > 0) {
+            rotations.push_back({AvlRotationKind::RightLeft, node->id});
+            node->right = rotateRight(node->right);
         } else {
-            log.push_back("Left at " + n->key);
+            rotations.push_back({AvlRotationKind::Left, node->id});
         }
-        return rotateLeft(n);
+        return rotateLeft(node);
     }
- 
-    return n;
+    return node;
 }
- 
-AVLNode* AVLTree::insertNode(AVLNode* n, const std::string& key, const ExprInfo& info, bool& added) {
-    if (!n) {
+
+AVLNode* AVLTree::insertNode(AVLNode* node, available_sheep::ExprId id,
+                             const ExprInfo& info, bool& added) {
+    if (!node) {
         added = true;
-        return new AVLNode(key, info);
+        return new AVLNode(id, info);
     }
-    if (key < n->key)
-        n->left = insertNode(n->left, key, info, added);
-    else if (key > n->key)
-        n->right = insertNode(n->right, key, info, added);
+    if (id < node->id)
+        node->left = insertNode(node->left, id, info, added);
+    else if (id > node->id)
+        node->right = insertNode(node->right, id, info, added);
     else
-        return n;
-    return rebalance(n);
+        return node;
+    return rebalance(node);
 }
- 
-AVLNode* AVLTree::eraseNode(AVLNode* n, const std::string& key, bool& removed) {
-    if (!n) return nullptr;
- 
-    if (key < n->key) {
-        n->left = eraseNode(n->left, key, removed);
-    } else if (key > n->key) {
-        n->right = eraseNode(n->right, key, removed);
+
+AVLNode* AVLTree::eraseNode(AVLNode* node, available_sheep::ExprId id,
+                            bool& removed) {
+    if (!node) return nullptr;
+
+    if (id < node->id) {
+        node->left = eraseNode(node->left, id, removed);
+    } else if (id > node->id) {
+        node->right = eraseNode(node->right, id, removed);
     } else {
         removed = true;
-        if (!n->left || !n->right) {
-            AVLNode* child = n->left ? n->left : n->right;
-            delete n;
+        if (!node->left || !node->right) {
+            AVLNode* child = node->left ? node->left : node->right;
+            delete node;
             return child;
         }
-        AVLNode* next = n->right;
-        while (next->left) next = next->left;
-        n->key = next->key;
-        n->info = next->info;
+        AVLNode* successor = node->right;
+        while (successor->left) successor = successor->left;
+        node->id = successor->id;
+        node->info = successor->info;
         bool ignored = false;
-        n->right = eraseNode(n->right, n->key, ignored);
+        node->right = eraseNode(node->right, successor->id, ignored);
     }
-    return rebalance(n);
+    return rebalance(node);
 }
- 
-bool AVLTree::insert(const std::string& key, const ExprInfo& info) {
+
+bool AVLTree::insert(available_sheep::ExprId id, const ExprInfo& info) {
     bool added = false;
-    root = insertNode(root, key, info, added);
-    if (added) count++;
+    root = insertNode(root, id, info, added);
+    if (added) ++count;
     return added;
 }
- 
-bool AVLTree::erase(const std::string& key) {
+
+bool AVLTree::update(available_sheep::ExprId id, const ExprInfo& info) {
+    AVLNode* node = root;
+    while (node) {
+        if (id == node->id) {
+            node->info = info;
+            return true;
+        }
+        node = id < node->id ? node->left : node->right;
+    }
+    return false;
+}
+
+bool AVLTree::erase(available_sheep::ExprId id) {
     bool removed = false;
-    root = eraseNode(root, key, removed);
-    if (removed) count--;
+    root = eraseNode(root, id, removed);
+    if (removed) --count;
     return removed;
 }
- 
-ExprInfo* AVLTree::find(const std::string& key) {
-    AVLNode* n = root;
-    while (n) {
-        if (key == n->key) return &n->info;
-        n = (key < n->key) ? n->left : n->right;
+
+ExprInfo* AVLTree::find(available_sheep::ExprId id) {
+    return const_cast<ExprInfo*>(
+        static_cast<const AVLTree&>(*this).find(id));
+}
+
+const ExprInfo* AVLTree::find(available_sheep::ExprId id) const {
+    const AVLNode* node = root;
+    while (node) {
+        if (id == node->id) return &node->info;
+        node = id < node->id ? node->left : node->right;
     }
     return nullptr;
 }
 
-int AVLTree::heightOfKey(const std::string& key) const {
-    const AVLNode* node = root;
-    while (node) {
-        if (key == node->key) return node->height;
-        node = (key < node->key) ? node->left : node->right;
-    }
-    return 0;
+bool AVLTree::contains(available_sheep::ExprId id) const {
+    return find(id) != nullptr;
 }
- 
-static void collectKeys(AVLNode* n, std::vector<std::string>& out) {
-    if (!n) return;
-    collectKeys(n->left, out);
-    out.push_back(n->key);
-    collectKeys(n->right, out);
+
+std::vector<AvlEntrySnapshot> AVLTree::snapshot() const {
+    std::vector<AvlEntrySnapshot> result;
+    result.reserve(count);
+    collectSnapshots(root, result);
+    return result;
 }
- 
-std::vector<std::string> AVLTree::keysInOrder() const {
-    std::vector<std::string> out;
-    collectKeys(root, out);
-    return out;
+
+bool AVLTree::isValid() const {
+    std::size_t validatedCount = 0;
+    bool valid = true;
+    validateNode(root, std::nullopt, std::nullopt, validatedCount, valid);
+    return valid && validatedCount == count;
 }
- 
-static bool checkNode(AVLNode* n) {
-    if (!n) return true;
-    int hl = n->left ? n->left->height : 0;
-    int hr = n->right ? n->right->height : 0;
-    if (std::abs(hl - hr) > 1) return false;
-    if (n->height != 1 + std::max(hl, hr)) return false;
-    if (n->left && !(n->left->key < n->key)) return false;
-    if (n->right && !(n->key < n->right->key)) return false;
-    return checkNode(n->left) && checkNode(n->right);
-}
- 
-bool AVLTree::isValid() const { return checkNode(root); }

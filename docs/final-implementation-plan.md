@@ -269,21 +269,20 @@ behavior.
 
 ## 6. Current implementation baseline and recommended order
 
-The repository currently contains the three Layer 4 libraries and focused
-tests, but not the HLD's Qt presentation, compiler frontend, or optimization
-pipeline. The trie and DAG substantially implement their standalone
-responsibilities. The AVL implementation is currently string-keyed and does
-not yet satisfy the HLD's `ExprId`-keyed expression-metadata role. The current
-CMake configuration registers three component tests; a previous build attempt
-selected an ARM bare-metal compiler and failed during compiler validation, so
-native build/test success is not yet verified.
+The repository now contains the Qt presentation, restricted-language frontend,
+IR/interpreter, optimizer, and the trie, DAG, and typed-ID AVL structures.
+CMake registers six CTest targets. A native Debug build and all six tests
+passed on 2026-10-27. The GUI displays the initial and optimized IR,
+diagnostics, optimization results, and value snapshots from the data
+structures.
 
-Recommended order: Phase 1 contracts/build; Phase 2 shared types and completed
-data structures; Phase 3 frontend and initial IR; Phase 4 optimization passes
-and fixed-point driver; Phase 5 Qt presentation; Phase 6 end-to-end validation.
-This sequence follows the HLD's dependencies: the optimizer consumes frontend
-IR and the data structures, while the UI displays results from all preceding
-layers.
+The remaining work is primarily Phase 6 release readiness: expand end-to-end
+and UI-level test coverage, validate Debug and Release configurations from
+clean native build directories, verify supported platform/toolchain behavior,
+and keep documented language and optimizer limitations aligned with the
+implemented behavior. The checklist below is the acceptance gate; completion
+of the current implementation does not by itself certify every release
+criterion.
 
 ## 7. Three-person implementation breakdown
 

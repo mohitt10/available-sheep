@@ -11,20 +11,18 @@
 enum class RunOutcome { FrontendFailed, OptimizationFailed, Optimized };
 
 struct ExprMetadata {
-    int dagNodeId = -1;
+    available_sheep::ExprId dagNodeId = 0;
     std::string resultName;
-    int useCount = 0;
+    std::size_t useCount = 0;
 };
 
 struct AvlNodeSnapshot {
-    std::string key;
+    available_sheep::ExprId id = 0;
     ExprMetadata info;
     int height = 1;
 };
 
-struct RotationEvent {
-    std::string description;
-};
+using RotationEvent = AvlRotationEvent;
 
 struct OptimizationResult {
     RunOutcome outcome = RunOutcome::FrontendFailed;

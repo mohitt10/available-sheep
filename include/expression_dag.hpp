@@ -8,10 +8,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace available_sheep {
+#include "shared_types.hpp"
 
-using ExprId = std::uint64_t;
-using TypeId = std::uint32_t;
+namespace available_sheep {
 
 enum class OperatorKind : std::uint16_t {
     Constant,

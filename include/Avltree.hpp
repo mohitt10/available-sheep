@@ -1,56 +1,87 @@
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
 #include <string>
-#include <utility>
 #include <vector>
- 
+
+#include "shared_types.hpp"
+
 struct ExprInfo {
-    int dagNodeId = -1;
     std::string resultName;
-    int useCount = 0;
+    std::size_t useCount = 0;
 };
- 
+
+enum class AvlRotationKind : std::uint8_t {
+    Left,
+    Right,
+    LeftRight,
+    RightLeft
+};
+
+struct AvlRotationEvent {
+    AvlRotationKind kind = AvlRotationKind::Left;
+    available_sheep::ExprId pivot{};
+};
+
+struct AvlEntrySnapshot {
+    available_sheep::ExprId id{};
+    ExprInfo info;
+    int height = 1;
+};
+
 struct AVLNode {
-    std::string key;
+    available_sheep::ExprId id;
     ExprInfo info;
     int height = 1;
     AVLNode* left = nullptr;
     AVLNode* right = nullptr;
-    AVLNode(const std::string& k, const ExprInfo& i) : key(k), info(i) {}
+
+    AVLNode(available_sheep::ExprId key, const ExprInfo& value)
+        : id(key), info(value) {}
 };
- 
+
 class AVLTree {
 public:
     AVLTree() = default;
     ~AVLTree() { destroy(root); }
     AVLTree(const AVLTree&) = delete;
     AVLTree& operator=(const AVLTree&) = delete;
- 
-    bool insert(const std::string& key, const ExprInfo& info);
-    bool erase(const std::string& key);
-    ExprInfo* find(const std::string& key);
-    int heightOfKey(const std::string& key) const;
-    bool contains(const std::string& key) { return find(key) != nullptr; }
- 
-    int size() const { return count; }
-    int height() const { return heightOf(root); }
-    std::vector<std::string> keysInOrder() const;
-    const std::vector<std::string>& rotationLog() const { return log; }
+
+    bool insert(available_sheep::ExprId id, const ExprInfo& info);
+    bool update(available_sheep::ExprId id, const ExprInfo& info);
+    bool erase(available_sheep::ExprId id);
+    ExprInfo* find(available_sheep::ExprId id);
+    const ExprInfo* find(available_sheep::ExprId id) const;
+    bool contains(available_sheep::ExprId id) const;
+
+    std::size_t size() const noexcept { return count; }
+    int height() const noexcept { return heightOf(root); }
+    std::vector<AvlEntrySnapshot> snapshot() const;
+    const std::vector<AvlRotationEvent>& rotationEvents() const noexcept {
+        return rotations;
+    }
     bool isValid() const;
- 
+
 private:
     AVLNode* root = nullptr;
-    int count = 0;
-    std::vector<std::string> log;
- 
-    static int heightOf(AVLNode* n) { return n ? n->height : 0; }
-    static int balanceOf(AVLNode* n) { return n ? heightOf(n->left) - heightOf(n->right) : 0; }
-    static void updateHeight(AVLNode* n);
-    static void destroy(AVLNode* n);
- 
-    AVLNode* rotateRight(AVLNode* y);
-    AVLNode* rotateLeft(AVLNode* x);
-    AVLNode* rebalance(AVLNode* n);
-    AVLNode* insertNode(AVLNode* n, const std::string& key, const ExprInfo& info, bool& added);
-    AVLNode* eraseNode(AVLNode* n, const std::string& key, bool& removed);
+    std::size_t count = 0;
+    std::vector<AvlRotationEvent> rotations;
+
+    static int heightOf(const AVLNode* node) {
+        return node ? node->height : 0;
+    }
+    static int balanceOf(const AVLNode* node) {
+        return node ? heightOf(node->left) - heightOf(node->right) : 0;
+    }
+    static void updateHeight(AVLNode* node);
+    static void destroy(AVLNode* node);
+
+    AVLNode* rotateRight(AVLNode* node);
+    AVLNode* rotateLeft(AVLNode* node);
+    AVLNode* rebalance(AVLNode* node);
+    AVLNode* insertNode(AVLNode* node, available_sheep::ExprId id,
+                        const ExprInfo& info, bool& added);
+    AVLNode* eraseNode(AVLNode* node, available_sheep::ExprId id,
+                       bool& removed);
 };
- 

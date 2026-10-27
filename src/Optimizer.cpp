@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iomanip>
 #include <map>
 #include <optional>
 #include <set>
@@ -410,23 +409,19 @@ void buildSnapshots(OptimizationResult& result,
     AVLTree avl;
     for (const auto& node : result.dagNodes) {
         std::ostringstream key;
-        key << 'e' << std::setw(20) << std::setfill('0') << node.id;
-        const int useCount = builder.useCounts().count(node.id)
-                                 ? builder.useCounts().at(node.id)
-                                 : 0;
-        ExprInfo info{static_cast<int>(node.id), key.str(), useCount};
-        avl.insert(key.str(), info);
+        key << 'e' << node.id;
+        const std::size_t useCount = builder.useCounts().count(node.id)
+                                         ? static_cast<std::size_t>(
+                                               builder.useCounts().at(node.id))
+                                         : 0;
+        avl.insert(node.id, ExprInfo{key.str(), useCount});
     }
-    for (const std::string& key : avl.keysInOrder()) {
-        const ExprInfo* info = avl.find(key);
-        if (!info) continue;
-        ExprMetadata metadata{info->dagNodeId, info->resultName, info->useCount};
+    for (const AvlEntrySnapshot& node : avl.snapshot()) {
+        ExprMetadata metadata{node.id, node.info.resultName, node.info.useCount};
         result.avlOrdered.push_back(metadata);
-        result.avlNodes.push_back(
-            AvlNodeSnapshot{key, metadata, avl.heightOfKey(key)});
+        result.avlNodes.push_back({node.id, metadata, node.height});
     }
-    for (const std::string& rotation : avl.rotationLog())
-        result.avlRotations.push_back(RotationEvent{rotation});
+    result.avlRotations = avl.rotationEvents();
     if (trie) result.trieEntries = trie->snapshot();
 }
 

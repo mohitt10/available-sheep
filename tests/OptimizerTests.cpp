@@ -159,6 +159,8 @@ void testLimitsAndSnapshots() {
     assert(!snapshots.avlNodes.empty());
     assert(!snapshots.trieEntries.empty());
     assert(snapshots.avlNodes.front().height > 0);
+    for (const auto& node : snapshots.avlNodes)
+        assert(node.id == node.info.dagNodeId);
     for (const auto& node : snapshots.dagNodes)
         assert(node.key.type == 1);
 }
