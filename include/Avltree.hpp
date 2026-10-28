@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,8 @@ struct AvlEntrySnapshot {
     available_sheep::ExprId id{};
     ExprInfo info;
     int height = 1;
+    std::optional<available_sheep::ExprId> leftChild;
+    std::optional<available_sheep::ExprId> rightChild;
 };
 
 struct AVLNode {

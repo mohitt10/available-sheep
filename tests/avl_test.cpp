@@ -32,6 +32,14 @@ int main() {
     assert(rightRotation.rotationEvents()[0].kind == AvlRotationKind::Left);
     assert(rightRotation.rotationEvents()[0].pivot == 1);
     assert(rightRotation.height() == 2);
+    const auto rotatedSnapshot = rightRotation.snapshot();
+    assert(rotatedSnapshot.size() == 3);
+    assert(rotatedSnapshot[0].id == 1);
+    assert(!rotatedSnapshot[0].leftChild && !rotatedSnapshot[0].rightChild);
+    assert(rotatedSnapshot[1].id == 2);
+    assert(rotatedSnapshot[1].leftChild == 1);
+    assert(rotatedSnapshot[1].rightChild == 3);
+    assert(rotatedSnapshot[2].id == 3);
 
     const AvlRotationKind rotationKinds[] = {
         AvlRotationKind::Right, AvlRotationKind::Left,

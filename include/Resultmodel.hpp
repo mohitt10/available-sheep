@@ -1,5 +1,6 @@
 
 #pragma once
+#include <optional>
 #include <vector>
 #include "Avltree.hpp"
 #include "Diagnostics.hpp"
@@ -20,6 +21,8 @@ struct AvlNodeSnapshot {
     available_sheep::ExprId id = 0;
     ExprMetadata info;
     int height = 1;
+    std::optional<available_sheep::ExprId> leftChild;
+    std::optional<available_sheep::ExprId> rightChild;
 };
 
 using RotationEvent = AvlRotationEvent;

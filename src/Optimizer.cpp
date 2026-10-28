@@ -419,7 +419,8 @@ void buildSnapshots(OptimizationResult& result,
     for (const AvlEntrySnapshot& node : avl.snapshot()) {
         ExprMetadata metadata{node.id, node.info.resultName, node.info.useCount};
         result.avlOrdered.push_back(metadata);
-        result.avlNodes.push_back({node.id, metadata, node.height});
+        result.avlNodes.push_back(
+            {node.id, metadata, node.height, node.leftChild, node.rightChild});
     }
     result.avlRotations = avl.rotationEvents();
     if (trie) result.trieEntries = trie->snapshot();

@@ -10,7 +10,11 @@ void collectSnapshots(const AVLNode* node,
                       std::vector<AvlEntrySnapshot>& result) {
     if (!node) return;
     collectSnapshots(node->left, result);
-    result.push_back({node->id, node->info, node->height});
+    result.push_back({node->id, node->info, node->height,
+                      node->left ? std::optional<available_sheep::ExprId>(node->left->id)
+                                 : std::nullopt,
+                      node->right ? std::optional<available_sheep::ExprId>(node->right->id)
+                                  : std::nullopt});
     collectSnapshots(node->right, result);
 }
 
